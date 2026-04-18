@@ -154,3 +154,4 @@ class TestLog:
         entry = self.make_entry(index=7)
         log = Log(entry=entry, pass_end=FAT_END, struct_l=33.0)
         assert "index=7" in repr(log)
+    
