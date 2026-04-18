@@ -5,4 +5,5 @@ max-line-length=80
 
 [MESSAGES CONTROL]
 disable=consider-using-dict-items,
-        consider-iterating-dictionary
+        consider-iterating-dictionary,
+        redefined-outer-name
