@@ -1,5 +1,4 @@
 # Copyright 2015 Maria Mercury <mariak>. All Rights Reserved.
-
 """Tests for the Log and Layer models in loghouse.models."""
 
 import pytest
@@ -156,6 +155,7 @@ class TestLog:
     log = Log(entry=entry, pass_end=FAT_END, struct_l=33.0)
     assert "index=7" in repr(log)
 
+
 class TestLayer:
   """Tests for the Layer class."""
 
@@ -167,7 +167,9 @@ class TestLayer:
     """Create a LogEntry with given dimensions."""
     return LogEntry(index=index, d_top=d_top, d_butt=d_butt, length=length)
 
-  def make_log(self, entry: LogEntry, pass_end: int,
+  def make_log(self,
+               entry: LogEntry,
+               pass_end: int,
                struct_l: float = 33.0) -> Log:
     """Create a placed Log from a LogEntry."""
     return Log(entry=entry, pass_end=pass_end, struct_l=struct_l)
@@ -179,10 +181,10 @@ class TestLayer:
     e2 = self.make_entry(2, 15.0, 19.0, 35.0)
     e3 = self.make_entry(3, 15.5, 19.5, 35.0)
     logs = [
-      self.make_log(e0, THIN_END, struct_l),
-      self.make_log(e1, FAT_END,  struct_l),
-      self.make_log(e2, THIN_END, struct_l),
-      self.make_log(e3, FAT_END,  struct_l),
+        self.make_log(e0, THIN_END, struct_l),
+        self.make_log(e1, FAT_END, struct_l),
+        self.make_log(e2, THIN_END, struct_l),
+        self.make_log(e3, FAT_END, struct_l),
     ]
     return Layer(indexes=[4, 5, 6, 7], stack=logs)
 
@@ -201,8 +203,8 @@ class TestLayer:
     e0 = self.make_entry(0, 14.0, 18.0, 35.0)
     e1 = self.make_entry(1, 14.5, 18.5, 35.0)
     logs = [
-      self.make_log(e0, THIN_END),
-      self.make_log(e1, FAT_END),
+        self.make_log(e0, THIN_END),
+        self.make_log(e1, FAT_END),
     ]
     with pytest.raises(ValueError, match="exactly 4 logs"):
       Layer(indexes=[], stack=logs)
@@ -275,10 +277,10 @@ class TestLayer:
     e2 = self.make_entry(2, 15.0, 19.0, 35.0)
     e3 = self.make_entry(3, 15.5, 19.5, 35.0)
     logs = [
-      self.make_log(e0, THIN_END),
-      self.make_log(e1, FAT_END),
-      self.make_log(e2, THIN_END),
-      self.make_log(e3, FAT_END),
+        self.make_log(e0, THIN_END),
+        self.make_log(e1, FAT_END),
+        self.make_log(e2, THIN_END),
+        self.make_log(e3, FAT_END),
     ]
     # index 2 is both in stack and indexes — should fail
     with pytest.raises(ValueError,

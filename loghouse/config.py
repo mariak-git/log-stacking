@@ -20,7 +20,7 @@ FAT_END: int = 1
 
 PASS_END_LABELS: dict[int, str] = {
     THIN_END: "THIN_END",
-    FAT_END:  "FAT_END",
+    FAT_END: "FAT_END",
 }
 
 # ---------------------------------------------------------------------------
@@ -44,13 +44,13 @@ CORNERS: dict[int, str] = {
 # ---------------------------------------------------------------------------
 
 NORTH: int = 2
-WEST:  int = 4
-EAST:  int = 8
+WEST: int = 4
+EAST: int = 8
 SOUTH: int = 16
 
 ORIENT: dict[int, str] = {
     NORTH: "NORTH",
-    WEST:  "WEST",
-    EAST:  "EAST",
+    WEST: "WEST",
+    EAST: "EAST",
     SOUTH: "SOUTH",
 }

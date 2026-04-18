@@ -1,5 +1,4 @@
 # Copyright 2015 Maria Mercury <mariak>. All Rights Reserved.
-
 """Core domain models for the log house stacking algorithm.
 
 Contains two main classes:
@@ -79,8 +78,7 @@ class Log:
     if entry.length < struct_l:
       raise ValueError(
           f"Log #{entry.index} length {entry.length:.2f} is shorter "
-          f"than struct_l {struct_l:.2f}"
-      )
+          f"than struct_l {struct_l:.2f}")
 
     self.entry = entry
     self.index = entry.index
@@ -119,12 +117,10 @@ class Log:
     return self.butt_new if self.pass_end == FAT_END else self.top_new
 
   def __repr__(self) -> str:
-    return (
-        f"Log(index={self.index}, pass={self.pass_str}, "
-        f"top={self.entry.d_top:.2f}, butt={self.entry.d_butt:.2f}, "
-        f"top_new={self.top_new:.2f}, butt_new={self.butt_new:.2f}, "
-        f"overdangle={self.overdangle:.2f})"
-    )
+    return (f"Log(index={self.index}, pass={self.pass_str}, "
+            f"top={self.entry.d_top:.2f}, butt={self.entry.d_butt:.2f}, "
+            f"top_new={self.top_new:.2f}, butt_new={self.butt_new:.2f}, "
+            f"overdangle={self.overdangle:.2f})")
 
 
 class Layer:
@@ -189,21 +185,20 @@ class Layer:
         c2 = log2.butt_new
 
       self.corners[corner] = max(c1, c2)
-      logger.debug("Corner %s height = %.2f",
-                   CORNERS[corner], self.corners[corner])
+      logger.debug("Corner %s height = %.2f", CORNERS[corner],
+                   self.corners[corner])
 
   def _init_tapers(self) -> None:
     """Compute taper rate for each wall from corner height differences."""
-    self.tapers[NORTH] = abs(
-        self.corners[SW] - self.corners[NW]) / self.struct_l
-    self.tapers[EAST] = abs(
-        self.corners[NW] - self.corners[NE]) / self.struct_l
-    self.tapers[SOUTH] = abs(
-        self.corners[NE] - self.corners[SE]) / self.struct_l
-    self.tapers[WEST] = abs(
-        self.corners[SE] - self.corners[SW]) / self.struct_l
+    self.tapers[NORTH] = abs(self.corners[SW] -
+                             self.corners[NW]) / self.struct_l
+    self.tapers[EAST] = abs(self.corners[NW] - self.corners[NE]) / self.struct_l
+    self.tapers[SOUTH] = abs(self.corners[NE] -
+                             self.corners[SE]) / self.struct_l
+    self.tapers[WEST] = abs(self.corners[SE] - self.corners[SW]) / self.struct_l
     logger.debug("Wall tapers: %s", {
-                 ORIENT[k]: f"{v:.3f}" for k, v in self.tapers.items()})
+        ORIENT[k]: f"{v:.3f}" for k, v in self.tapers.items()
+    })
 
   def validate_indexes(self) -> None:
     """Verify no layer log appears in the remaining indexes.
@@ -214,8 +209,7 @@ class Layer:
     for log in self.stack:
       if log.index in self.indexes:
         raise ValueError(
-            f"Log #{log.index} is in both the stack and remaining indexes"
-        )
+            f"Log #{log.index} is in both the stack and remaining indexes")
 
   def __repr__(self) -> str:
     log_ids = [log.index for log in self.stack]
