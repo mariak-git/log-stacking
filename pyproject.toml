@@ -1,0 +1,14 @@
+[tool.pycodestyle]
+indent-size = 2
+max-line-length = 80
+
+[tool.pylint.messages-control]
+disable = [
+  "consider-using-dict-items",
+  "consider-iterating-dictionary",
+]
+
+[tool.pylint.format]
+indent-string = "  "
+indent-after-paren = 2
+max-line-length = 80
