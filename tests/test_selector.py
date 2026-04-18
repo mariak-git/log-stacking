@@ -5,9 +5,9 @@
 import logging
 import pytest
 
+from loghouse.selector import pick_first, pick_next, pick_layer_candidates
+from loghouse.models import Log, LogEntry, Layer
 from loghouse.config import FAT_END, THIN_END
-from loghouse.models import Log, LogEntry
-from loghouse.selector import pick_first, pick_next
 
 @pytest.fixture
 def log_capture(caplog):
@@ -163,3 +163,135 @@ class TestPickNext:
       pick_next(first, logs, indexes=[1], struct_l=33.0)
     assert "pick_next" in log_capture.text
     assert "best match" in log_capture.text
+
+
+class TestPickLayerCandidates:
+  """Tests for pick_layer_candidates function."""
+
+  # ------------------------------------------------------------------
+  # Helpers
+  # ------------------------------------------------------------------
+
+  def make_layer(self, struct_l=33.0) -> Layer:
+    """Create a minimal valid Layer with known tapers."""
+    logs = {
+      0: LogEntry(index=0, d_top=14.0, d_butt=18.0, length=35.0),
+      1: LogEntry(index=1, d_top=14.5, d_butt=18.5, length=35.0),
+      2: LogEntry(index=2, d_top=15.0, d_butt=19.0, length=35.0),
+      3: LogEntry(index=3, d_top=15.5, d_butt=19.5, length=35.0),
+    }
+    stack = [
+      Log(entry=logs[0], pass_end=THIN_END, struct_l=struct_l),
+      Log(entry=logs[1], pass_end=FAT_END,  struct_l=struct_l),
+      Log(entry=logs[2], pass_end=THIN_END, struct_l=struct_l),
+      Log(entry=logs[3], pass_end=FAT_END,  struct_l=struct_l),
+    ]
+    return Layer(indexes=[4, 5, 6, 7, 8, 9], stack=stack)
+
+  def make_logs_with_tapers(
+      self, tapers: list[float], struct_l=33.0) -> dict[int, LogEntry]:
+    """Create logs with specific tapers starting at index 4."""
+    logs = {}
+    for i, taper in enumerate(tapers):
+      index = i + 4
+      d_top = 14.0
+      d_butt = round(d_top + taper * struct_l, 2)
+      logs[index] = LogEntry(
+        index=index, d_top=d_top, d_butt=d_butt, length=struct_l + 2.0
+      )
+    return logs
+
+  # ------------------------------------------------------------------
+  # Basic candidate selection
+  # ------------------------------------------------------------------
+
+  def test_returns_list(self):
+    """pick_layer_candidates returns a list."""
+    layer = self.make_layer()
+    logs = self.make_logs_with_tapers([0.12, 0.12, 0.12, 0.12, 0.12, 0.12])
+    result = pick_layer_candidates(logs, layer)
+    assert isinstance(result, list)
+
+  def test_returns_at_least_4(self):
+    """Result always contains at least 4 candidates."""
+    layer = self.make_layer()
+    logs = self.make_logs_with_tapers([0.12, 0.12, 0.12, 0.12, 0.12, 0.12])
+    result = pick_layer_candidates(logs, layer)
+    assert len(result) >= 4
+
+  def test_candidates_are_from_layer_indexes(self):
+    """All returned candidates are from layer.indexes."""
+    layer = self.make_layer()
+    logs = self.make_logs_with_tapers([0.12, 0.12, 0.12, 0.12, 0.12, 0.12])
+    result = pick_layer_candidates(logs, layer)
+    for i in result:
+      assert i in layer.indexes
+
+  def test_matches_by_taper(self):
+    """Logs with taper within margin are included as candidates."""
+    layer = self.make_layer()
+    # Get actual taper from layer to create a matching log
+    wall_taper = list(layer.tapers.values())[0]
+    # Create logs: first 4 match taper, last 2 don't
+    tapers = [wall_taper] * 4 + [wall_taper + 1.0] * 2
+    logs = self.make_logs_with_tapers(tapers)
+    result = pick_layer_candidates(logs, layer, taper_margin=0.01)
+    # Matching logs (indexes 4-7) should be in candidates
+    for i in range(4, 8):
+      assert i in result
+
+  # ------------------------------------------------------------------
+  # Fallback behavior
+  # ------------------------------------------------------------------
+
+  def test_fallback_when_few_matches(self):
+    """Falls back to priority queue when fewer than 4 taper matches."""
+    layer = self.make_layer()
+    # All logs have very different tapers — none will match
+    logs = self.make_logs_with_tapers([5.0, 5.0, 5.0, 5.0, 5.0, 5.0])
+    result = pick_layer_candidates(logs, layer, taper_margin=0.01)
+    assert len(result) >= 4
+
+  def test_fallback_prefers_larger_diameter(self):
+    """Fallback selects logs with larger average diameter first."""
+    layer = self.make_layer()
+    # No taper matches — all go to fallback
+    # Make logs with very different diameters
+    logs = {
+      4: LogEntry(index=4, d_top=10.0, d_butt=12.0, length=35.0),  # small
+      5: LogEntry(index=5, d_top=20.0, d_butt=24.0, length=35.0),  # large
+      6: LogEntry(index=6, d_top=10.0, d_butt=12.0, length=35.0),  # small
+      7: LogEntry(index=7, d_top=20.0, d_butt=24.0, length=35.0),  # large
+      8: LogEntry(index=8, d_top=10.0, d_butt=12.0, length=35.0),  # small
+      9: LogEntry(index=9, d_top=10.0, d_butt=12.0, length=35.0),  # small
+    }
+    result = pick_layer_candidates(logs, layer, taper_margin=0.01)
+    # Large diameter logs (5, 7) should be preferred
+    assert 5 in result
+    assert 7 in result
+
+  # ------------------------------------------------------------------
+  # Error handling
+  # ------------------------------------------------------------------
+
+  def test_too_few_logs_raises(self):
+    """ValueError raised when fewer than 4 logs remain."""
+    layer = self.make_layer()
+    # Override indexes to have only 3
+    layer.indexes = [4, 5, 6]
+    logs = self.make_logs_with_tapers([0.12, 0.12, 0.12])
+    with pytest.raises(ValueError, match="Not enough logs remaining"):
+      pick_layer_candidates(logs, layer)
+
+  # ------------------------------------------------------------------
+  # Logger
+  # ------------------------------------------------------------------
+
+  def test_logger_debug_message(self, log_capture):
+    """Logger emits debug message with candidate count."""
+    layer = self.make_layer()
+    logs = self.make_logs_with_tapers([0.12, 0.12, 0.12, 0.12, 0.12, 0.12])
+    with log_capture.at_level(logging.DEBUG, logger="loghouse.selector"):
+      pick_layer_candidates(logs, layer)
+    assert "pick_layer_candidates" in log_capture.text
+    assert "candidates" in log_capture.text

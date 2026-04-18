@@ -6,10 +6,11 @@ This module contains functions for selecting logs from the catalogue
 to form layers, based on diameter matching and taper similarity.
 """
 
+import heapq
 import logging
 #from typing import Optional
 
-from loghouse.config import FAT_END, THIN_END
+from loghouse.config import FAT_END, THIN_END, ORIENT
 from loghouse.models import Log, LogEntry
 
 logger = logging.getLogger(__name__)
@@ -92,3 +93,80 @@ def pick_next(
 
   next_pass_end = THIN_END if log.pass_end == FAT_END else FAT_END
   return Log(entry=logs[i_min], pass_end=next_pass_end, struct_l=struct_l)
+
+
+def pick_layer_candidates(
+  logs: dict[int, LogEntry],
+  layer: "Layer",
+  taper_margin: float = 0.01,
+) -> list[int]:
+  """Find candidate logs for the next layer based on taper similarity.
+
+  Filters remaining logs to those whose taper is within taper_margin
+  of any wall taper in the previous layer. If fewer than 4 candidates
+  are found, falls back to logs with largest average diameter and
+  closest taper to the previous layer's wall tapers.
+
+  Args:
+    logs: Dict of all available LogEntry objects keyed by index.
+    layer: The previous layer to match tapers against.
+    taper_margin: Maximum taper difference to consider a match,
+      in inches per foot. Defaults to 0.01. A larger margin may
+      be needed towards the end of log selection when fewer logs
+      are available. Controlled via CLI --taper-margin parameter.
+
+  Returns:
+    List of log indexes that are candidates for the next layer.
+    Always contains at least 4 indexes if enough logs remain.
+
+  Raises:
+    ValueError: If fewer than 4 logs remain in layer.indexes.
+  """
+  if len(layer.indexes) < 4:
+    raise ValueError(
+      f"Not enough logs remaining: {len(layer.indexes)} < 4"
+    )
+
+  # --- Main candidate selection: match by taper ---
+  candidates = set()
+  for i in layer.indexes:
+    entry = logs[i]
+    for wall in ORIENT:
+      if abs(entry.taper - layer.tapers[wall]) <= taper_margin:
+        candidates.add(i)
+        break
+
+  logger.debug(
+    "pick_layer_candidates: found %d candidates within taper margin %.3f",
+    len(candidates), taper_margin
+  )
+
+  # --- Fallback: not enough candidates found ---
+  if len(candidates) < 4:
+    logger.debug(
+      "pick_layer_candidates: falling back to priority queue selection"
+    )
+    # Remaining logs not already in candidates
+    remaining = [i for i in layer.indexes if i not in candidates]
+
+    # Build priority queue sorted by:
+    # 1. Largest avg diameter first (negated for min-heap)
+    # 2. Closest taper to any wall in previous layer as tiebreaker
+    fallback = []
+    for i in remaining:
+      entry = logs[i]
+      avg_d = (entry.d_top + entry.d_butt) / 2
+      min_taper_dist = min(
+        abs(entry.taper - layer.tapers[wall])
+        for wall in ORIENT
+      )
+      heapq.heappush(fallback, (-avg_d, min_taper_dist, i))
+
+    # Pop until we have at least 4 candidates
+    while len(candidates) < 4 and fallback:
+      _, _, i = heapq.heappop(fallback)
+      candidates.add(i)
+      logger.debug(
+        "pick_layer_candidates: fallback added log #%d", i
+      )  
+  return list(candidates)
