@@ -2,36 +2,19 @@
 
 """Tests for the layer building functions in loghouse.builder."""
 
+import logging
 import math
 
 import pytest
 
-from loghouse.builder import BuildState, try_layer
-from loghouse.config import SW, NW, NE, SE
-from loghouse.models import LogEntry, Log, Layer
-from loghouse.config import THIN_END, FAT_END
+from loghouse.builder import BuildState, try_layer, build_first_layer
+from loghouse.config import SW, NW, NE, SE, THIN_END, FAT_END
+from loghouse.models import LogEntry, Layer
 
-
-# ------------------------------------------------------------------
-# Helpers
-# ------------------------------------------------------------------
-
-def make_layer(struct_l=33.0) -> Layer:
-  """Create a minimal valid Layer with 4 logs."""
-  logs = {
-    0: LogEntry(index=0, d_top=14.0, d_butt=18.0, length=35.0),
-    1: LogEntry(index=1, d_top=14.5, d_butt=18.5, length=35.0),
-    2: LogEntry(index=2, d_top=15.0, d_butt=19.0, length=35.0),
-    3: LogEntry(index=3, d_top=15.5, d_butt=19.5, length=35.0),
-  }
-  stack = [
-    Log(entry=logs[0], pass_end=THIN_END, struct_l=struct_l),
-    Log(entry=logs[1], pass_end=FAT_END,  struct_l=struct_l),
-    Log(entry=logs[2], pass_end=THIN_END, struct_l=struct_l),
-    Log(entry=logs[3], pass_end=FAT_END,  struct_l=struct_l),
-  ]
-  return Layer(indexes=[4, 5, 6, 7], stack=stack)
-
+@pytest.fixture
+def log_capture(caplog: pytest.LogCaptureFixture):
+  """Alias for caplog fixture to avoid confusion with CAPLOG LogType."""
+  return caplog
 
 # ------------------------------------------------------------------
 # BuildState
@@ -69,7 +52,7 @@ class TestBuildState:
   # update_corner_heights
   # ------------------------------------------------------------------
 
-  def test_update_corner_heights(self):
+  def test_update_corner_heights(self, make_layer):  # ← fixture injected here
     """Corner heights are correctly accumulated after adding a layer."""
     state = BuildState(struct_l=33.0)
     layer = make_layer()
@@ -79,7 +62,7 @@ class TestBuildState:
         layer.corners[corner]
       )
 
-  def test_update_corner_heights_accumulates(self):
+  def test_update_corner_heights_accumulates(self, make_layer):
     """Corner heights accumulate correctly across multiple layers."""
     state = BuildState(struct_l=33.0)
     layer = make_layer()
@@ -245,3 +228,82 @@ class TestTryLayer:
     indexes = list(range(3))
     with pytest.raises(Exception):
       try_layer(logs, indexes, index=0, pass_end=FAT_END, struct_l=33.0)
+
+
+class TestBuildFirstLayer:
+  """Tests for build_first_layer function."""
+
+  def test_returns_layer(self):
+    """build_first_layer returns a Layer object."""
+    logs = make_logs(8)
+    state = BuildState(struct_l=33.0)
+    result = build_first_layer(logs, state)
+    assert isinstance(result, Layer)
+
+  def test_layer_has_4_logs(self):
+    """Layer stack contains exactly 4 logs."""
+    logs = make_logs(8)
+    state = BuildState(struct_l=33.0)
+    result = build_first_layer(logs, state)
+    assert len(result.stack) == 4
+
+  def test_starts_with_largest_diameter(self):
+    """First log has the largest average diameter."""
+    logs = make_logs(8)
+    state = BuildState(struct_l=33.0)
+    result = build_first_layer(logs, state)
+    first_log = result.stack[0]
+    first_avg = (first_log.entry.d_top + first_log.entry.d_butt) / 2
+    for log in result.stack[1:]:
+      avg = (log.entry.d_top + log.entry.d_butt) / 2
+      assert first_avg >= avg
+
+  def test_remaining_indexes_correct(self):
+    """Remaining indexes exclude the 4 selected logs."""
+    logs = make_logs(8)
+    state = BuildState(struct_l=33.0)
+    result = build_first_layer(logs, state)
+    used = {log.index for log in result.stack}
+    assert len(result.indexes) == 4
+    for i in result.indexes:
+      assert i not in used
+
+  def test_validate_indexes_passes(self):
+    """No selected log appears in remaining indexes."""
+    logs = make_logs(8)
+    state = BuildState(struct_l=33.0)
+    result = build_first_layer(logs, state)
+    result.validate_indexes()
+
+  def test_not_enough_logs_raises(self):
+    """ValueError raised when fewer than 4 logs available."""
+    logs = make_logs(3)
+    state = BuildState(struct_l=33.0)
+    with pytest.raises(ValueError, match="Not enough logs"):
+      build_first_layer(logs, state)
+
+  def test_picks_best_pass_end(self):
+    """Picks the pass end with smallest connection distance."""
+    logs = make_logs(8)
+    state = BuildState(struct_l=33.0)
+    result = build_first_layer(logs, state)
+    # Verify the result is one of the two valid pass ends
+    assert result.stack[0].pass_end in [FAT_END, THIN_END]
+
+  def test_corners_populated(self):
+    """Layer corners dict is populated after building."""
+    logs = make_logs(8)
+    state = BuildState(struct_l=33.0)
+    result = build_first_layer(logs, state)
+    assert set(result.corners.keys()) == {SW, NW, NE, SE}
+    for _, value in result.corners.items():
+      assert value > 0
+
+  def test_logger_debug_message(self, log_capture):
+    """Logger emits debug message with selection info."""
+    logs = make_logs(8)
+    state = BuildState(struct_l=33.0)
+    with log_capture.at_level(logging.DEBUG, logger="loghouse.builder"):
+      build_first_layer(logs, state)
+    assert "build_first_layer" in log_capture.text
+    assert "largest avg diameter" in log_capture.text

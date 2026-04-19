@@ -12,7 +12,6 @@ combination search for optimal corner leveling.
 import logging
 import math
 from dataclasses import dataclass, field
-from itertools import combinations
 
 from loghouse.config import (
   FAT_END,
@@ -20,8 +19,8 @@ from loghouse.config import (
   CORNERS,
   SW, NW, NE, SE,
 )
-from loghouse.models import Log, LogEntry, Layer
-from loghouse.selector import pick_first, pick_next, pick_layer_candidates
+from loghouse.models import LogEntry, Layer
+from loghouse.selector import pick_first, pick_next
 
 logger = logging.getLogger(__name__)
 
@@ -134,3 +133,81 @@ def try_layer(
 
   remaining = [i for i in indexes if i not in [l.index for l in stack]]
   return Layer(indexes=remaining, stack=stack)
+
+
+def build_first_layer(
+  logs: dict[int, LogEntry],
+  state: BuildState,
+) -> Layer:
+  """Build the first layer of the structure.
+
+  Tries both THIN_END and FAT_END as the starting pass end,
+  picks the one with the smallest corner connection distance.
+  Always starts with the largest average diameter log.
+
+  The connection distance is the absolute difference between
+  the first and last log's corner diameters — smaller is better
+  as it means the layer closes more level at the connection point.
+
+  Args:
+    logs: Dict of all available LogEntry objects keyed by index.
+    state: Current build state with struct_l and remaining indexes.
+
+  Returns:
+    The best first Layer.
+
+  Raises:
+    ValueError: If fewer than 4 logs are available.
+  """
+  if len(logs) < 4:
+    raise ValueError(
+      f"Not enough logs to build first layer: {len(logs)} < 4"
+    )
+
+  # Start with the largest average diameter log
+  all_indexes = sorted(
+    logs.keys(),
+    key=lambda i: -(logs[i].d_top + logs[i].d_butt) / 2
+  )
+
+  logger.debug(
+    "build_first_layer: starting with log #%d (largest avg diameter)",
+    all_indexes[0]
+  )
+
+  # Try both THIN and FAT end first
+  results = {}
+  for pass_end in [THIN_END, FAT_END]:
+    layer = try_layer(
+      logs=logs,
+      indexes=all_indexes,
+      index=all_indexes[0],
+      pass_end=pass_end,
+      struct_l=state.struct_l,
+    )
+    # Connection distance: difference between first and last log
+    # corner diameters — measures how well the layer closes
+    if pass_end == FAT_END:
+      dist = abs(
+        layer.stack[0].butt_new - layer.stack[3].butt_new
+      )
+    else:
+      dist = abs(
+        layer.stack[0].top_new - layer.stack[3].top_new
+      )
+    results[pass_end] = (layer, dist)
+    logger.debug(
+      "build_first_layer: pass_end=%s connection_distance=%.2f",
+      "FAT" if pass_end == FAT_END else "THIN", dist
+    )
+
+  # Pick the pass end with smallest connection distance
+  best_pass_end = min(results, key=lambda p: results[p][1])
+  best_layer, best_dist = results[best_pass_end]
+
+  logger.debug(
+    "build_first_layer: selected %s END with distance=%.2f",
+    "FAT" if best_pass_end == FAT_END else "THIN", best_dist
+  )
+
+  return best_layer
