@@ -6,7 +6,7 @@ import math
 
 import pytest
 
-from loghouse.builder import BuildState
+from loghouse.builder import BuildState, try_layer
 from loghouse.config import SW, NW, NE, SE
 from loghouse.models import LogEntry, Log, Layer
 from loghouse.config import THIN_END, FAT_END
@@ -160,3 +160,88 @@ class TestBuildState:
     """repr contains the number of layers."""
     state = BuildState(struct_l=33.0)
     assert "layers=0" in repr(state)
+
+
+# ------------------------------------------------------------------
+# Helpers (add to existing helpers section)
+# ------------------------------------------------------------------
+
+def make_logs(count: int, struct_l: float = 33.0) -> dict[int, LogEntry]:
+  """Create a dict of LogEntry objects with gradually increasing dimensions."""
+  logs = {}
+  for i in range(count):
+    d_top = round(14.0 + i * 0.5, 2)
+    d_butt = round(d_top + 4.0, 2)
+    logs[i] = LogEntry(
+      index=i,
+      d_top=d_top,
+      d_butt=d_butt,
+      length=struct_l + 2.0
+    )
+  return logs
+
+
+class TestTryLayer:
+  """Tests for try_layer function."""
+
+  def test_returns_layer(self):
+    """try_layer returns a Layer object."""
+    logs = make_logs(8)
+    indexes = list(range(8))
+    result = try_layer(logs, indexes, index=0, pass_end=FAT_END, struct_l=33.0)
+    assert isinstance(result, Layer)
+
+  def test_layer_has_4_logs(self):
+    """Layer stack contains exactly 4 logs."""
+    logs = make_logs(8)
+    indexes = list(range(8))
+    result = try_layer(logs, indexes, index=0, pass_end=FAT_END, struct_l=33.0)
+    assert len(result.stack) == 4
+
+  def test_first_log_has_correct_index(self):
+    """First log in stack has the specified start index."""
+    logs = make_logs(8)
+    indexes = list(range(8))
+    result = try_layer(logs, indexes, index=2, pass_end=FAT_END, struct_l=33.0)
+    assert result.stack[0].index == 2
+
+  def test_first_log_has_correct_pass_end(self):
+    """First log has the specified pass end."""
+    logs = make_logs(8)
+    indexes = list(range(8))
+    result = try_layer(logs, indexes, index=0, pass_end=FAT_END, struct_l=33.0)
+    assert result.stack[0].pass_end == FAT_END
+
+  def test_pass_end_alternates(self):
+    """Pass end alternates across the 4 logs in the stack."""
+    logs = make_logs(8)
+    indexes = list(range(8))
+    result = try_layer(logs, indexes, index=0, pass_end=FAT_END, struct_l=33.0)
+    assert result.stack[0].pass_end == FAT_END
+    assert result.stack[1].pass_end == THIN_END
+    assert result.stack[2].pass_end == FAT_END
+    assert result.stack[3].pass_end == THIN_END
+
+  def test_remaining_indexes_correct(self):
+    """Remaining indexes exclude the 4 selected logs."""
+    logs = make_logs(8)
+    indexes = list(range(8))
+    result = try_layer(logs, indexes, index=0, pass_end=FAT_END, struct_l=33.0)
+    used = {log.index for log in result.stack}
+    assert len(result.indexes) == 4
+    for i in result.indexes:
+      assert i not in used
+
+  def test_validate_indexes_passes(self):
+    """No selected log appears in remaining indexes."""
+    logs = make_logs(8)
+    indexes = list(range(8))
+    result = try_layer(logs, indexes, index=0, pass_end=FAT_END, struct_l=33.0)
+    result.validate_indexes()  # should not raise
+
+  def test_not_enough_logs_raises(self):
+    """ValueError raised when fewer than 4 logs available."""
+    logs = make_logs(3)
+    indexes = list(range(3))
+    with pytest.raises(Exception):
+      try_layer(logs, indexes, index=0, pass_end=FAT_END, struct_l=33.0)
