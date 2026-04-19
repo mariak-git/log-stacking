@@ -12,6 +12,8 @@ combination search for optimal corner leveling.
 import logging
 import math
 from dataclasses import dataclass, field
+from enum import Enum
+from itertools import combinations
 
 from loghouse.config import (
   FAT_END,
@@ -20,13 +22,25 @@ from loghouse.config import (
   SW, NW, NE, SE,
 )
 from loghouse.models import LogEntry, Layer
-from loghouse.selector import pick_first, pick_next
+from loghouse.selector import pick_first, pick_next, pick_layer_candidates
 
 logger = logging.getLogger(__name__)
 
 # Default target height: 10 courses at 18 inches each, converted to feet
 _DEFAULT_TARGET_HEIGHT_FT = (18 * 10) / 12
 
+class ScoringMethod(Enum):
+  """Scoring method for layer combination selection.
+
+  STD_DEV: Minimize standard deviation of cumulative corner heights.
+    Used for even layers to enforce leveling.
+  CONNECTION_DIST: Minimize corner connection distance.
+    Used for odd layers.
+
+  # TODO(mariak): Add lookahead scoring method for global optimization.
+  """
+  STD_DEV = "std_dev"
+  CONNECTION_DIST = "connection_dist"
 
 @dataclass
 class BuildState:
@@ -93,6 +107,7 @@ class BuildState:
       f"level={self.is_level()}, "
       f"target_reached={self.is_target_reached()})"
     )
+
 
 # TODO(mariak): Cap candidate set to improve performance with large catalogues.
 # TODO(mariak): Add early termination when std_dev == 0.0.
@@ -209,5 +224,126 @@ def build_first_layer(
     "build_first_layer: selected %s END with distance=%.2f",
     "FAT" if best_pass_end == FAT_END else "THIN", best_dist
   )
+  return best_layer
+
+
+def _score_layer(
+  layer: Layer,
+  state: BuildState,
+  scoring: ScoringMethod,
+  pass_end: int = FAT_END,
+) -> float:
+  """Score a candidate layer using the given scoring method.
+
+  Args:
+    layer: The candidate layer to score.
+    state: Current build state with cumulative corner heights.
+    scoring: Scoring method to use.
+    pass_end: Pass end orientation for connection distance scoring.
+
+  Returns:
+    Score value — lower is better.
+  """
+  if scoring == ScoringMethod.STD_DEV:
+    heights = [
+      state.corner_heights[corner] + layer.corners[corner]
+      for corner in CORNERS
+    ]
+    mean = sum(heights) / len(heights)
+    variance = sum((h - mean) ** 2 for h in heights) / len(heights)
+    return math.sqrt(variance)
+
+  if scoring == ScoringMethod.CONNECTION_DIST:
+    if pass_end == FAT_END:
+      return abs(layer.stack[0].butt_new - layer.stack[3].butt_new)
+    return abs(layer.stack[0].top_new - layer.stack[3].top_new)
+
+  raise ValueError(f"Unknown scoring method: {scoring}")
+
+
+def build_layer(
+  logs: dict[int, LogEntry],
+  prev_layer: Layer,
+  pass_end: int,
+  state: BuildState,
+  scoring: ScoringMethod,
+) -> Layer:
+  """Build the next layer by trying all C(n,4) candidate combinations.
+
+  Selects the best combination of 4 logs from candidates based on
+  the scoring method:
+  - STD_DEV: minimizes std_dev of cumulative corner heights (even layers)
+  - CONNECTION_DIST: minimizes corner connection distance (odd layers)
+
+  Within each combination, logs are selected greedily using pick_next.
+
+  # TODO(mariak): Add cap on candidate set size for performance
+  # with large catalogues e.g. max 10 candidates.
+  # TODO(mariak): Add early termination when std_dev == 0.0.
+  # TODO(mariak): Consider caching pick_next results across combinations.
+
+  Args:
+    logs: Dict of all available LogEntry objects keyed by index.
+    prev_layer: The previously built layer.
+    pass_end: Pass end orientation for this layer.
+    state: Current build state with struct_l and corner heights.
+    scoring: Scoring method to use for combination selection.
+
+  Returns:
+    The best Layer found across all combinations.
+
+  Raises:
+    ValueError: If fewer than 4 candidate logs are available.
+  """
+  candidates = pick_layer_candidates(
+    logs, prev_layer, state.taper_margin
+  )
+
+  if len(candidates) < 4:
+    raise ValueError(
+      f"Not enough candidates for next layer: {len(candidates)} < 4"
+    )
+
+  logger.debug(
+    "build_layer: trying C(%d,4)=%d combinations with scoring=%s",
+    len(candidates),
+    len(list(combinations(candidates, 4))),
+    scoring.value
+  )
+
+  best_layer = None
+  best_score = float("inf")
+
+  for combo in combinations(candidates, 4):
+    # Within combo, start with largest avg diameter log
+    start_index = max(
+      combo,
+      key=lambda i: (logs[i].d_top + logs[i].d_butt) / 2
+    )
+    layer = try_layer(
+      logs=logs,
+      indexes=list(combo),
+      index=start_index,
+      pass_end=pass_end,
+      struct_l=state.struct_l,
+    )
+
+    score = _score_layer(layer, state, scoring, pass_end)
+
+    if score < best_score:
+      best_score = score
+      best_layer = layer
+
+  logger.debug(
+    "build_layer: best score=%.4f with logs=%s",
+    best_score,
+    [log.index for log in best_layer.stack]
+  )
+
+  # Update remaining indexes — remove used logs from prev_layer.indexes
+  best_layer.indexes = [
+    i for i in prev_layer.indexes
+    if i not in {log.index for log in best_layer.stack}
+  ]
 
   return best_layer

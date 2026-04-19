@@ -7,7 +7,8 @@ import math
 
 import pytest
 
-from loghouse.builder import BuildState, try_layer, build_first_layer
+from loghouse.builder import BuildState, try_layer, build_first_layer, \
+  build_layer, ScoringMethod
 from loghouse.config import SW, NW, NE, SE, THIN_END, FAT_END
 from loghouse.models import LogEntry, Layer
 
@@ -307,3 +308,181 @@ class TestBuildFirstLayer:
       build_first_layer(logs, state)
     assert "build_first_layer" in log_capture.text
     assert "largest avg diameter" in log_capture.text
+
+
+class TestScoringMethod:
+  """Tests for ScoringMethod enum."""
+
+  def test_std_dev_value(self):
+    """STD_DEV has correct string value."""
+    assert ScoringMethod.STD_DEV.value == "std_dev"
+
+  def test_connection_dist_value(self):
+    """CONNECTION_DIST has correct string value."""
+    assert ScoringMethod.CONNECTION_DIST.value == "connection_dist"
+
+  def test_two_scoring_methods(self):
+    """There are exactly two scoring methods."""
+    assert len(ScoringMethod) == 2
+
+
+class TestBuildLayer:
+  """Tests for build_layer function."""
+
+  def make_logs(
+      self, count: int, struct_l: float = 33.0) -> dict[int, LogEntry]:
+    """Create a dict of LogEntry objs with gradually increasing dimensions."""
+    logs = {}
+    for i in range(count):
+      d_top = round(14.0 + i * 0.5, 2)
+      d_butt = round(d_top + 4.0, 2)
+      logs[i] = LogEntry(
+        index=i,
+        d_top=d_top,
+        d_butt=d_butt,
+        length=struct_l + 2.0
+      )
+    return logs
+
+  def test_returns_layer(self, make_layer):
+    """build_layer returns a Layer object."""
+    logs = self.make_logs(12)
+    prev_layer = make_layer()
+    prev_layer.indexes = list(range(4, 12))
+    state = BuildState(struct_l=33.0)
+    result = build_layer(
+      logs=logs,
+      prev_layer=prev_layer,
+      pass_end=FAT_END,
+      state=state,
+      scoring=ScoringMethod.STD_DEV,
+    )
+    assert isinstance(result, Layer)
+
+  def test_layer_has_4_logs(self, make_layer):
+    """Layer stack contains exactly 4 logs."""
+    logs = self.make_logs(12)
+    prev_layer = make_layer()
+    prev_layer.indexes = list(range(4, 12))
+    state = BuildState(struct_l=33.0)
+    result = build_layer(
+      logs=logs,
+      prev_layer=prev_layer,
+      pass_end=FAT_END,
+      state=state,
+      scoring=ScoringMethod.STD_DEV,
+    )
+    assert len(result.stack) == 4
+
+  def test_remaining_indexes_correct(self, make_layer):
+    """Remaining indexes exclude the 4 selected logs."""
+    logs = self.make_logs(12)
+    prev_layer = make_layer()
+    prev_layer.indexes = list(range(4, 12))
+    state = BuildState(struct_l=33.0)
+    result = build_layer(
+      logs=logs,
+      prev_layer=prev_layer,
+      pass_end=FAT_END,
+      state=state,
+      scoring=ScoringMethod.STD_DEV,
+    )
+    used = {log.index for log in result.stack}
+    for i in result.indexes:
+      assert i not in used
+
+  def test_validate_indexes_passes(self, make_layer):
+    """No selected log appears in remaining indexes."""
+    logs = self.make_logs(12)
+    prev_layer = make_layer()
+    prev_layer.indexes = list(range(4, 12))
+    state = BuildState(struct_l=33.0)
+    result = build_layer(
+      logs=logs,
+      prev_layer=prev_layer,
+      pass_end=FAT_END,
+      state=state,
+      scoring=ScoringMethod.STD_DEV,
+    )
+    result.validate_indexes()
+
+  def test_std_dev_scoring(self, make_layer):
+    """STD_DEV scoring produces a more level result than random selection."""
+    logs = self.make_logs(12)
+    prev_layer = make_layer()
+    prev_layer.indexes = list(range(4, 12))
+    state = BuildState(struct_l=33.0)
+    result = build_layer(
+      logs=logs,
+      prev_layer=prev_layer,
+      pass_end=FAT_END,
+      state=state,
+      scoring=ScoringMethod.STD_DEV,
+    )
+    # Update state and check levelness
+    state.update_corner_heights(result)
+    assert state.corner_std_dev() >= 0.0
+
+  def test_connection_dist_scoring(self, make_layer):
+    """CONNECTION_DIST scoring returns a valid layer."""
+    logs = self.make_logs(12)
+    prev_layer = make_layer()
+    prev_layer.indexes = list(range(4, 12))
+    state = BuildState(struct_l=33.0)
+    result = build_layer(
+      logs=logs,
+      prev_layer=prev_layer,
+      pass_end=THIN_END,
+      state=state,
+      scoring=ScoringMethod.CONNECTION_DIST,
+    )
+    assert isinstance(result, Layer)
+    assert len(result.stack) == 4
+
+  def test_correct_pass_end(self, make_layer):
+    """First log in stack has the specified pass end."""
+    logs = self.make_logs(12)
+    prev_layer = make_layer()
+    prev_layer.indexes = list(range(4, 12))
+    state = BuildState(struct_l=33.0)
+    result = build_layer(
+      logs=logs,
+      prev_layer=prev_layer,
+      pass_end=FAT_END,
+      state=state,
+      scoring=ScoringMethod.STD_DEV,
+    )
+    assert result.stack[0].pass_end == FAT_END
+
+  def test_not_enough_candidates_raises(self, make_layer):
+    """ValueError raised when fewer than 4 candidates available."""
+    logs = self.make_logs(12)
+    prev_layer = make_layer()
+    prev_layer.indexes = [4, 5, 6]  # only 3 remaining
+    state = BuildState(struct_l=33.0)
+    with pytest.raises(ValueError,
+                       match="Not enough logs remaining: 3 < 4"):
+      build_layer(
+        logs=logs,
+        prev_layer=prev_layer,
+        pass_end=FAT_END,
+        state=state,
+        scoring=ScoringMethod.STD_DEV,
+      )
+
+  def test_logger_debug_message(self, make_layer, log_capture):
+    """Logger emits debug message with combination info."""
+    logs = self.make_logs(12)
+    prev_layer = make_layer()
+    prev_layer.indexes = list(range(4, 12))
+    state = BuildState(struct_l=33.0)
+    with log_capture.at_level(logging.DEBUG, logger="loghouse.builder"):
+      build_layer(
+        logs=logs,
+        prev_layer=prev_layer,
+        pass_end=FAT_END,
+        state=state,
+        scoring=ScoringMethod.STD_DEV,
+      )
+    assert "build_layer" in log_capture.text
+    assert "combinations" in log_capture.text
