@@ -1,4 +1,4 @@
-# Copyright 2015 Maria Mercury <mariak>. All Rights Reserved.
+# Copyright 2015-2026 Maria Mercury <mariak>. All Rights Reserved.
 """Catalogue module for reading and validating the log catalogue from CSV file.
 
 Typical usage example:

@@ -1,4 +1,4 @@
-# Copyright 2015 Maria Mercury <mariak>. All Rights Reserved.
+# Copyright 2015-2026 Maria Mercury <mariak>. All Rights Reserved.
 """
 Constants defining structural parameters and orientation enumerations
 for the log house stacking algorithm.
