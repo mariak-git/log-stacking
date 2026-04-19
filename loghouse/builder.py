@@ -23,6 +23,7 @@ from loghouse.config import (
 )
 from loghouse.models import LogEntry, Layer
 from loghouse.selector import pick_first, pick_next, pick_layer_candidates
+from loghouse.utils import avg_diameter
 
 logger = logging.getLogger(__name__)
 
@@ -182,7 +183,7 @@ def build_first_layer(
   # Start with the largest average diameter log
   all_indexes = sorted(
     logs.keys(),
-    key=lambda i: -(logs[i].d_top + logs[i].d_butt) / 2
+    key=lambda i: -avg_diameter(logs[i])
   )
 
   logger.debug(
@@ -318,7 +319,7 @@ def build_layer(
     # Within combo, start with largest avg diameter log
     start_index = max(
       combo,
-      key=lambda i: (logs[i].d_top + logs[i].d_butt) / 2
+      key=lambda i: avg_diameter(logs[i])
     )
     layer = try_layer(
       logs=logs,

@@ -10,6 +10,7 @@ import logging
 
 from loghouse.config import FAT_END, THIN_END, ORIENT
 from loghouse.models import Log, LogEntry
+from loghouse.utils import avg_diameter
 
 logger = logging.getLogger(__name__)
 
@@ -132,10 +133,6 @@ def pick_layer_candidates(
       for wall in ORIENT
     )
 
-  def avg_diameter(i: int) -> float:
-    """Average diameter of log i."""
-    return (logs[i].d_top + logs[i].d_butt) / 2
-
   # --- Main candidate selection: match by taper ---
   candidates = set(
     i for i in layer.indexes
@@ -154,7 +151,7 @@ def pick_layer_candidates(
     )
     remaining = sorted(
       (i for i in layer.indexes if i not in candidates),
-      key=lambda i: (-avg_diameter(i), min_taper_dist(i))
+      key=lambda i: (-avg_diameter(logs[i]), min_taper_dist(i))
     )
     for i in remaining:
       if len(candidates) >= 4:

@@ -1,5 +1,4 @@
 # Copyright 2015 Maria Mercury <mariak>. All Rights Reserved.
-
 """Shared pytest fixtures available to all test modules in the test suite."""
 
 import pytest
