@@ -42,7 +42,7 @@ In butt and pass log construction:
 
 ```text
 log_stacking/
-loghouse/              # Python package
+loghouse/            # Python package
 config.py            # Constants and enumerations
 models.py            # Log, LogEntry, Layer classes
 catalogue.py         # CSV reading and log type definitions
@@ -51,8 +51,8 @@ builder.py           # Layer building algorithm
 printer.py           # Output formatting
 cli.py               # Command line interface
 utils.py             # Shared utility functions
-tests/                 # Test suite
-data/                  # Sample catalogues
+tests/               # Test suite
+data/                # Sample catalogues
 README.md
 requirements.txt
 ```
