@@ -6,9 +6,7 @@ This module contains functions for selecting logs from the catalogue
 to form layers, based on diameter matching and taper similarity.
 """
 
-import heapq
 import logging
-#from typing import Optional
 
 from loghouse.config import FAT_END, THIN_END, ORIENT
 from loghouse.models import Log, LogEntry
@@ -127,14 +125,22 @@ def pick_layer_candidates(
       f"Not enough logs remaining: {len(layer.indexes)} < 4"
     )
 
+  def min_taper_dist(i: int) -> float:
+    """Minimum taper distance to any wall in previous layer."""
+    return min(
+      abs(logs[i].taper - layer.tapers[wall])
+      for wall in ORIENT
+    )
+
+  def avg_diameter(i: int) -> float:
+    """Average diameter of log i."""
+    return (logs[i].d_top + logs[i].d_butt) / 2
+
   # --- Main candidate selection: match by taper ---
-  candidates = set()
-  for i in layer.indexes:
-    entry = logs[i]
-    for wall in ORIENT:
-      if abs(entry.taper - layer.tapers[wall]) <= taper_margin:
-        candidates.add(i)
-        break
+  candidates = set(
+    i for i in layer.indexes
+    if min_taper_dist(i) <= taper_margin
+  )
 
   logger.debug(
     "pick_layer_candidates: found %d candidates within taper margin %.3f",
@@ -144,29 +150,16 @@ def pick_layer_candidates(
   # --- Fallback: not enough candidates found ---
   if len(candidates) < 4:
     logger.debug(
-      "pick_layer_candidates: falling back to priority queue selection"
+      "pick_layer_candidates: falling back to sorted selection"
     )
-    # Remaining logs not already in candidates
-    remaining = [i for i in layer.indexes if i not in candidates]
-
-    # Build priority queue sorted by:
-    # 1. Largest avg diameter first (negated for min-heap)
-    # 2. Closest taper to any wall in previous layer as tiebreaker
-    fallback = []
+    remaining = sorted(
+      (i for i in layer.indexes if i not in candidates),
+      key=lambda i: (-avg_diameter(i), min_taper_dist(i))
+    )
     for i in remaining:
-      entry = logs[i]
-      avg_d = (entry.d_top + entry.d_butt) / 2
-      min_taper_dist = min(
-        abs(entry.taper - layer.tapers[wall])
-        for wall in ORIENT
-      )
-      heapq.heappush(fallback, (-avg_d, min_taper_dist, i))
-
-    # Pop until we have at least 4 candidates
-    while len(candidates) < 4 and fallback:
-      _, _, i = heapq.heappop(fallback)
+      if len(candidates) >= 4:
+        break
       candidates.add(i)
-      logger.debug(
-        "pick_layer_candidates: fallback added log #%d", i
-      )  
+      logger.debug("pick_layer_candidates: fallback added log #%d", i)
+
   return list(candidates)
