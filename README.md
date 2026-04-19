@@ -8,8 +8,7 @@ for building a log house shell using the [butt and pass](https://www.theoutdoorh
 ## Background
 
 This program was originally written in 2015 and used in an actual
-log house build conducted from raw peeled logs. The algorithm was
-used on-site to determine the stacking order for the walls.
+log house build conducted from raw peeled logs, graded for structural construction. The algorithm was used on-site to determine the stacking order for the walls.
 
 The project was recently modernized and published on GitHub as a
 showcase of the original work.
@@ -24,8 +23,8 @@ selects and arranges logs into layers to form four walls of a square log house.
 The algorithm optimizes log placement to keep walls level and minimize corner
 gaps, using a greedy search with exhaustive combination testing.
 
-The program outputs a stacking order with cardinal directions (N/S/E/W) for
-each log in each layer, making it practical to use on a building site. For reflections and insights about the actual build process, visit the
+The program outputs a stacking order with cardinal directions (N/W/S/E) for
+each log in each layer, making it practical to use on a building site. The layers placement follows counter clockwise direction. For reflections and brief insights about the actual build journey, visit the
 [build log](https://medianpath.blogspot.com).
 
 ## What is "Butt and Pass"?
