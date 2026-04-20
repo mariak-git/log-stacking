@@ -276,14 +276,12 @@ with 2-space indentation and 80 character line limit.
 ## Known Limitations and Future Work
 
 - Only WALL logs are currently used for stacking. Selection of RPSL,
-  GSL, GIRDER, CAP and RP logs is not yet implemented.
+  GSL, GIRDER, CAP and RP logs is not implemented.
   (`TODO(mariak)`)
-- Dual type logs (e.g. `WALL|RPSL`) are not considered for stacking.
+- Multi type logs (e.g. `WALL|RPSL`) are not considered for stacking at the moment; don't mark it in the catalogue - to make all potential wall logs be evaluated.
   (`TODO(mariak)`)
 - A lookahead algorithm is planned as an alternative to the current
   greedy approach for better global optimization. (`TODO(mariak)`)
-- Program-assisted validation of user log type assignments is planned.
-  (`TODO(mariak)`)
 
 ## License
 
