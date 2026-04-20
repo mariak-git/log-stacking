@@ -182,9 +182,9 @@ The catalogue is a CSV file with the following columns:
 | `GSL` | 1 | Girder Support Log |
 | `GIRDER` | 1 | 2nd floor support log |
 | `CAP` | 2 | Top layer logs (~20% longer than WALL) |
-| `RP` | 1 | Ridge Pole (largest/longest, never stacked) |
+| `RP` | 1 | Ridge Pole (largest/longest, never stacked in a wall shell) |
 
-A log can have at most four types, separated by `|` (e.g. `WALL|RPSL!GIRDER`).
+A log can have at most four types, separated by `|` (e.g. `WALL|RPSL|GIRDER`).
 
 ### Sample Catalogue
 
