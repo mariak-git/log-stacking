@@ -7,7 +7,7 @@ import os
 import pytest
 
 from loghouse.cli import _parse_args, _validate_args, main
-from loghouse.config import DEFAULT_STRUCT_H, DEFAULT_STRUCT_L
+from loghouse.config import DEFAULT_STRUCT_H_FT, DEFAULT_STRUCT_L_FT
 
 # ------------------------------------------------------------------
 # Helpers
@@ -44,28 +44,28 @@ class TestParseArgs:
       _parse_args(["--length", "33"])
 
   def test_default_length(self, tmp_path):
-    """Default length is DEFAULT_STRUCT_L."""
+    """Default length is DEFAULT_STRUCT_L_FT."""
     path = make_valid_catalogue(tmp_path)
     args = _parse_args(["--logfile", path])
-    assert args.length == DEFAULT_STRUCT_L
+    assert args.length == DEFAULT_STRUCT_L_FT
 
   def test_default_height(self, tmp_path):
-    """Default height is DEFAULT_STRUCT_H."""
+    """Default height is DEFAULT_STRUCT_H_FT."""
     path = make_valid_catalogue(tmp_path)
     args = _parse_args(["--logfile", path])
-    assert args.height == DEFAULT_STRUCT_H
+    assert args.height == DEFAULT_STRUCT_H_FT
 
   def test_default_level_margin(self, tmp_path):
-    """Default level margin is 1.5."""
+    """Default level margin is 2.0."""
     path = make_valid_catalogue(tmp_path)
     args = _parse_args(["--logfile", path])
-    assert args.level_margin == 1.5
+    assert args.level_margin == 2.0
 
   def test_default_taper_margin(self, tmp_path):
-    """Default taper margin is 0.01."""
+    """Default taper margin is 0.1."""
     path = make_valid_catalogue(tmp_path)
     args = _parse_args(["--logfile", path])
-    assert args.taper_margin == 0.01
+    assert args.taper_margin == 0.1
 
   def test_default_no_catalogue_false(self, tmp_path):
     """Default no_catalogue is False."""

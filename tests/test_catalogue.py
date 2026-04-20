@@ -84,11 +84,12 @@ class TestCatalogueEntry:
     assert ce.notes == "straight"
 
   def test_too_many_types_raises(self):
-    """More than 2 types raises ValueError."""
+    """More than 4 types raises ValueError."""
     entry = self.make_entry()
-    with pytest.raises(ValueError, match="at most 2 types"):
-      CatalogueEntry(entry=entry,
-                     log_types={LogType.WALL, LogType.RPSL, LogType.GSL})
+    with pytest.raises(ValueError, match="at most 4 types"):
+      CatalogueEntry(
+        entry=entry, log_types={
+          LogType.WALL, LogType.RPSL, LogType.GSL, LogType.CAP, LogType.GIRDER})
 
   def test_rp_combined_raises(self):
     """RP combined with another type raises ValueError."""
@@ -97,10 +98,10 @@ class TestCatalogueEntry:
       CatalogueEntry(entry=entry, log_types={LogType.RP, LogType.WALL})
 
   def test_cap_combined_raises(self):
-    """CAP combined with another type raises ValueError."""
+    """RP combined with another type raises ValueError."""
     entry = self.make_entry()
     with pytest.raises(ValueError, match="cannot be combined"):
-      CatalogueEntry(entry=entry, log_types={LogType.CAP, LogType.WALL})
+      CatalogueEntry(entry=entry, log_types={LogType.RP, LogType.WALL})
 
   def test_is_wall_candidate_true(self):
     """WALL only log is a wall candidate."""

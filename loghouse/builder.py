@@ -48,17 +48,19 @@ class BuildState:
   """Accumulated state of the log stacking process.
 
   Attributes:
-    layers: List of stacked layers in order.
-    corner_heights: Cumulative corner heights in inches at SW/NW/NE/SE.
     struct_l: Wall length in feet.
     target_height: Target structure height in inches from CLI.
     level_margin: Max allowed corner height difference in inches.
     taper_margin: Max taper difference for candidate selection in inches/ft.
+    height_tolerance: distance in inches to target_height as a stop condition.
+    layers: List of stacked layers in order.
+    corner_heights: Cumulative corner heights in inches at SW/NW/NE/SE.
   """
-  struct_l: float
-  target_height: float = _DEFAULT_TARGET_HEIGHT_FT * 12
-  level_margin: float = 1.5
-  taper_margin: float = 0.01
+  struct_l: float # feet
+  target_height: float = _DEFAULT_TARGET_HEIGHT_FT * 12 # inches
+  level_margin: float = 1.5 # inches
+  taper_margin: float = 0.1 # inches
+  height_tolerance: float = 10.0 # inches
   layers: list = field(default_factory=list)
   corner_heights: dict = field(default_factory=lambda: {
     SW: 0.0, NW: 0.0, NE: 0.0, SE: 0.0
@@ -83,12 +85,17 @@ class BuildState:
     return (max(heights) - min(heights)) <= self.level_margin
 
   def is_target_reached(self) -> bool:
-    """Check if target height has been reached.
+    """Check if target height has been reached or is within tolerance.
+
+    Stops if max cumulative corner height is within height_tolerance
+    of target — either above or below.
 
     Returns:
-      True if max cumulative corner height >= target_height.
+      True if within height_tolerance of target_height.
     """
-    return max(self.corner_heights.values()) >= self.target_height
+    return abs(max(
+      self.corner_heights.values()) - self.target_height
+      ) <= self.height_tolerance
 
   def corner_std_dev(self) -> float:
     """Calculate standard deviation of cumulative corner heights.
@@ -277,7 +284,9 @@ def build_layer(
   - CONNECTION_DIST: minimizes corner connection distance (odd layers)
 
   Within each combination, logs are selected greedily using pick_next.
-
+  C(n,4) exhaustive search is viable for typical residentail builds (N <= 100 
+  logs, n <= 20 candidates per layer).
+  
   # TODO(mariak): Add cap on candidate set size for performance
   # with large catalogues e.g. max 10 candidates.
   # TODO(mariak): Add early termination when std_dev == 0.0.

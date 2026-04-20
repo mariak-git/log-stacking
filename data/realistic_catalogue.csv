@@ -1,0 +1,64 @@
+index,d_top,d_butt,length,notes,log_type
+1,16.0,23.0,51.0,straight,CAP|GIRDER|RPSL
+2,16.0,23.0,47.25,straight,CAP|GIRDER|RPSL
+3,15.5,25.0,54.0,straight,RP
+4,18.7,24.0,54.0,straight,CAP
+5,16.0,24.0,54.0,straight,CAP|GIRDER|RPSL
+6,15.0,21.5,54.5,straight; slightly bowed at thin end,WALL
+7,16.0,21.0,41.0,straight,WALL
+8,16.0,21.0,41.25,straight; knotty,WALL
+9,15.0,20.0,41.25,straight; sligtly curves at thin end,WALL
+10,16.0,20.0,41.0,straight,WALL
+11,15.0,21.5,45.75,straight; expansion at thick end,GIRDER|RPSL
+12,16.0,21.0,41.25,straight; knotty; curves at thick end,WALL
+13,15.0,22.0,41.0,straight; knotty,WALL
+14,15.5,21.0,41.08,straight; slightly bowed at thin end,WALL
+15,17.0,23.0,41.08,straight,WALL
+16,15.0,21.2,41.08,straight,WALL
+17,15.0,19.0,41.0,straight; bowed at thick end,WALL
+18,14.0,18.5,40.8,straight,WALL
+19,15.5,20.0,41.17,bowed at thick end,WALL
+20,16.0,20.0,40.9,straight; knotty,WALL
+21,17.5,22.5,41.0,straight; bowed at thick end,WALL
+22,16.0,20.5,41.0,straight,WALL
+23,14.5,20.0,41.0,straight,WALL
+24,17.0,22.0,41.17,straight; good!,WALL
+25,15.0,23.0,41.25,straight; slightly damaged by logging claw,WALL
+26,14.5,19.0,41.08,straight; knotty,WALL
+27,16.2,22.0,33.0,straight; fat,GSL
+28,15.0,22.5,41.0,straight; very knotty,WALL
+29,15.0,21.7,41.3,straight; good!,WALL
+31,18.5,24.0,41.0,straight; nice|,WALL
+32,13.5,19.5,41.3,bowed at thick end,WALL
+33,17.5,22.5,41.17,straight; a bit knotty; good,WALL
+34,14.5,22.5,41.0,straight; slightly bowed in the middle,WALL
+35,14.2,20.0,41.08,straight,WALL
+36,14.4,21.0,37.0,straight; very knotty,WALL
+37,13.2,16.5,41.0,straight; good!,WALL
+38,19.5,24.0,37.0,straight; fat,GSL|RPSL
+39,15.5,21.3,52.17,straight; good!,CAP|GIRDER|RPSL
+40,17.0,22.0,41.0,straight; knotty,WALL
+41,13.5,17.5,41.0,straight; knotty; good!,WALL
+42,13.5,19.0,41.0,straight; good,WALL
+43,14.5,22.0,41.17,straight; knotty; good!,WALL
+44,16.5,21.0,41.17,straight; curves at thick end,WALL
+45,16.0,20.0,41.0,straight; knotty,WALL
+46,16.0,19.8,41.0,straight; slightly bowed in the middle,WALL
+47,15.5,20.0,41.17,bowed at thick end,WALL
+49,14.0,19.0,37.0,straight; knotty; thin,WALL
+50,18.0,23.0,41.0,straight; thick; knotty; good!,WALL
+51,15.0,19.5,41.25,straight; knotty; bowed at thick end,WALL
+52,18.5,27.5,41.25,straight; knotty; with character,WALL
+53,16.0,24.0,41.0,straight; knotty; good!,WALL
+54,16.0,22.5,41.0,straight; knotty; good!,WALL
+55,13.5,19.0,41.08,straight; good!,WALL
+56,15.2,19.5,40.83,straight; expands at thick end,WALL
+57,19.0,23.5,40.0,straight; thick; good!,WALL
+58,13.5,20.5,40.92,straight; thick; knotty,WALL
+
+
+
+
+
+
+

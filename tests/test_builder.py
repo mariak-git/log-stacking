@@ -40,9 +40,9 @@ class TestBuildState:
     assert state.level_margin == pytest.approx(1.5)
 
   def test_default_taper_margin(self):
-    """Default taper margin is 0.01."""
+    """Default taper margin is 0.1."""
     state = BuildState(struct_l=33.0)
-    assert state.taper_margin == pytest.approx(0.01)
+    assert state.taper_margin == pytest.approx(0.1)
 
   def test_default_layers_empty(self):
     """Layers list defaults to empty."""
@@ -111,11 +111,11 @@ class TestBuildState:
     state.corner_heights = {SW: 180.0, NW: 179.0, NE: 178.0, SE: 177.0}
     assert state.is_target_reached() is True
 
-  def test_is_target_reached_false_below_target(self):
-    """is_target_reached returns False when max corner < target."""
+  def test_is_target_reached_true_within_height_margin(self):
+    """is_target_reached returns True when (max corner - target) < margin."""
     state = BuildState(struct_l=33.0, target_height=180.0)
     state.corner_heights = {SW: 170.0, NW: 168.0, NE: 169.0, SE: 167.0}
-    assert state.is_target_reached() is False
+    assert state.is_target_reached() is True
 
   # ------------------------------------------------------------------
   # corner_std_dev

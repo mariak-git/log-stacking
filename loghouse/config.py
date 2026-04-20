@@ -9,10 +9,13 @@ for the log house stacking algorithm.
 # ---------------------------------------------------------------------------
 
 # Structure defaults and minimums
-DEFAULT_STRUCT_L: float = 33.0   # feet
-DEFAULT_STRUCT_H: float = 15.0   # feet
-MIN_STRUCT_L: float = 14.0       # feet
-MIN_STRUCT_H_FT: float = 1.0     # feet
+DEFAULT_STRUCT_L_FT: float = 33.0   # feet
+DEFAULT_STRUCT_H_FT: float = 15.0   # feet
+MIN_STRUCT_L_FT: float = 14.0       # feet
+MIN_STRUCT_H_FT: float = 1.0        # feet
+
+# Maximum allowed height overshoot in inches
+DEFAULT_HEIGHT_TOLERANCE_IN: float = 10.0
 
 # ---------------------------------------------------------------------------
 # Log end types

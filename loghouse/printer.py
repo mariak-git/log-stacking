@@ -9,7 +9,7 @@ Typical usage example:
   with get_writer(filename) as writer:
     print_catalogue(catalogue, indexes, writer)
     print_layer(1, layer, state, writer)
-    print_summary(state, target_height, writer)
+    print_summary(state, target_height, height_tolerance, writer)
 """
 
 import sys
@@ -17,7 +17,7 @@ from contextlib import contextmanager
 from typing import IO, Optional
 
 from loghouse.builder import BuildState
-from loghouse.config import CORNERS, SW, NW, NE, SE
+from loghouse.config import CORNERS, DEFAULT_HEIGHT_TOLERANCE_IN, SW, NW, NE, SE
 from loghouse.models import Layer
 
 # Notes keywords that trigger printing
@@ -170,6 +170,7 @@ def print_layer(
 def print_summary(
   state: BuildState,
   target_height: float,
+  height_tolerance: float = DEFAULT_HEIGHT_TOLERANCE_IN,
   writer: IO = sys.stdout,
 ) -> None:
   """Print the final stacking summary.
@@ -185,7 +186,7 @@ def print_summary(
 
   # Determine status
   statuses = []
-  if height_margin > 6.0:
+  if height_margin > height_tolerance:
     if actual_height > target_height:
       statuses.append("WARNING: height exceeded")
     else:

@@ -36,7 +36,7 @@ class LogType(Enum):
 
 
 # Log types that are never used for wall stacking
-_NON_WALL_TYPES = {LogType.RP, LogType.CAP}
+_NON_WALL_TYPES = {LogType.RP}
 
 
 class CatalogueEntry:
@@ -44,7 +44,7 @@ class CatalogueEntry:
 
   Attributes:
     entry: The LogEntry with core dimensions for stacking.
-    log_types: Set of assigned LogType values (at most 2).
+    log_types: Set of assigned LogType values (at most 4).
     notes: Optional free text description of the log.
   """
 
@@ -60,12 +60,11 @@ class CatalogueEntry:
       notes: Optional description string.
 
     Raises:
-      ValueError: If more than 2 types are assigned.
-      ValueError: If RP or CAP is combined with any other type.
+      ValueError: If more than 4 types are assigned.
     """
-    if len(log_types) > 2:
+    if len(log_types) > 4:
       raise ValueError(
-          f"Log #{entry.index}: at most 2 types allowed, got {log_types}")
+          f"Log #{entry.index}: at most 4 types allowed, got {log_types}")
     for t in _NON_WALL_TYPES:
       if t in log_types and len(log_types) > 1:
         raise ValueError(

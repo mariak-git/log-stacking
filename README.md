@@ -7,7 +7,7 @@ for building a log house shell using the [butt and pass](https://www.theoutdoorh
 
 ## Background
 
-This program was originally written in 2015 and used in an actual
+This program was originally written in 2015 and used as a guideline for log selection in an actual
 log house build conducted from raw peeled logs, graded for structural construction. The algorithm was used on-site to determine the stacking order for the walls.
 
 The project was recently modernized and published on GitHub as a
@@ -91,8 +91,9 @@ python -m loghouse --logfile data/catalogue.csv --length 33 --height 15.0
 | `--logfile` | Path to log catalogue CSV file | required |
 | `--length` | Structure side length in feet | 33.0 ft |
 | `--height` | Target structure height in feet | 15.0 ft |
-| `--level-margin` | Max allowed corner height difference in inches | 1.5 in |
-| `--taper-margin` | Max taper difference for candidate selection in inches/ft | 0.01 |
+| `--level-margin` | Max allowed corner height difference in inches | 2.0 in |
+| `--taper-margin` | Max taper difference for candidate selection in inches/ft | 0.1 |
+| `--height-tolerance` | Maximum allowed height overshoot in inches | 10.0 in |
 | `--output` | Output filename (default: stdout) | stdout |
 | `--no-catalogue` | Skip printing the log catalogue | False |
 | `--verbose` | Enable debug logging | False |

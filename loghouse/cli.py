@@ -15,9 +15,9 @@ from loghouse.builder import BuildState, ScoringMethod, build_first_layer, \
   build_layer
 from loghouse.catalogue import read_catalogue, get_wall_logs
 from loghouse.config import (
-  DEFAULT_STRUCT_L,
-  DEFAULT_STRUCT_H,
-  MIN_STRUCT_L,
+  DEFAULT_STRUCT_L_FT,
+  DEFAULT_STRUCT_H_FT,
+  MIN_STRUCT_L_FT,
   MIN_STRUCT_H_FT,
   FAT_END,
   THIN_END,
@@ -45,7 +45,7 @@ def _parse_args(argv=None) -> argparse.Namespace:
   parser.add_argument(
     "--length",
     type=float,
-    default=DEFAULT_STRUCT_L,
+    default=DEFAULT_STRUCT_L_FT,
     metavar="FT",
     help="Structure side length in feet (square perimeter assumed).",
   )
@@ -59,23 +59,30 @@ def _parse_args(argv=None) -> argparse.Namespace:
   parser.add_argument(
     "--height",
     type=float,
-    default=DEFAULT_STRUCT_H,
+    default=DEFAULT_STRUCT_H_FT,
     metavar="FT",
     help="Target structure height in feet.",
   )
   parser.add_argument(
     "--level-margin",
     type=float,
-    default=1.5,
+    default=2.0,
     metavar="IN",
     help="Maximum allowed corner height difference in inches.",
   )
   parser.add_argument(
     "--taper-margin",
     type=float,
-    default=0.01,
+    default=0.1,
     metavar="IN/FT",
     help="Maximum taper difference for candidate selection in inches/ft.",
+  )
+  parser.add_argument(
+    "--height-tolerance",
+    type=float,
+    default=10.0,
+    metavar="IN",
+    help="Maximum allowed height overshoot in inches. Default: 10.0 in.",
   )
   parser.add_argument(
     "--output",
@@ -109,9 +116,9 @@ def _validate_args(args: argparse.Namespace) -> None:
   Raises:
     SystemExit: If any argument is invalid.
   """
-  if args.length < MIN_STRUCT_L:
+  if args.length < MIN_STRUCT_L_FT:
     print(
-      f"Error: --length must be >= {MIN_STRUCT_L} ft, got {args.length}",
+      f"Error: --length must be >= {MIN_STRUCT_L_FT} ft, got {args.length}",
       file=sys.stderr
     )
     sys.exit(1)
@@ -190,6 +197,7 @@ def main(argv=None) -> None:
     target_height=target_height_in,
     level_margin=args.level_margin,
     taper_margin=args.taper_margin,
+    height_tolerance=args.height_tolerance
   )
 
   with get_writer(args.output) as writer:
@@ -243,4 +251,4 @@ def main(argv=None) -> None:
       layer_num += 1
 
     # Print summary
-    print_summary(state, target_height_in, writer)
+    print_summary(state, target_height_in, args.height_tolerance, writer)

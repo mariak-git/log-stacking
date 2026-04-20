@@ -252,7 +252,7 @@ class TestPrintSummary:
     """Output contains SUMMARY header."""
     writer = make_writer()
     state = self.make_state({SW: 180.0, NW: 179.0, NE: 180.0, SE: 179.0})
-    print_summary(state, 180.0, writer)
+    print_summary(state, 180.0, 6.0, writer)
     output = writer.getvalue()
     assert "SUMMARY" in output
 
@@ -260,7 +260,7 @@ class TestPrintSummary:
     """Output contains target height in feet and inches."""
     writer = make_writer()
     state = self.make_state({SW: 180.0, NW: 179.0, NE: 180.0, SE: 179.0})
-    print_summary(state, 180.0, writer)
+    print_summary(state, 180.0, 6.0, writer)
     output = writer.getvalue()
     assert "Target height:" in output
     assert "15 ft" in output
@@ -269,7 +269,7 @@ class TestPrintSummary:
     """Output contains actual height."""
     writer = make_writer()
     state = self.make_state({SW: 180.0, NW: 179.0, NE: 180.0, SE: 179.0})
-    print_summary(state, 180.0, writer)
+    print_summary(state, 180.0, 6.0, writer)
     output = writer.getvalue()
     assert "Actual height:" in output
 
@@ -277,15 +277,15 @@ class TestPrintSummary:
     """Status is OK when height and level are within margins."""
     writer = make_writer()
     state = self.make_state({SW: 180.0, NW: 180.0, NE: 180.0, SE: 180.0})
-    print_summary(state, 180.0, writer)
+    print_summary(state, 180.0, 6.0, writer)
     output = writer.getvalue()
     assert "OK" in output
 
   def test_status_warning_height_exceeded(self):
-    """Status warns when height exceeds target by more than 6 inches."""
+    """Status warns when height exceeds target by more than 10.0 inches."""
     writer = make_writer()
-    state = self.make_state({SW: 188.0, NW: 188.0, NE: 188.0, SE: 188.0})
-    print_summary(state, 180.0, writer)
+    state = self.make_state({SW: 191.0, NW: 192.0, NE: 191.0, SE: 192.0})
+    print_summary(state, 180.0, writer=writer)
     output = writer.getvalue()
     assert "WARNING: height exceeded" in output
 
@@ -293,7 +293,7 @@ class TestPrintSummary:
     """Status warns when corners are not level."""
     writer = make_writer()
     state = self.make_state({SW: 180.0, NW: 180.0, NE: 180.0, SE: 175.0})
-    print_summary(state, 180.0, writer)
+    print_summary(state, 180.0, 6.0, writer)
     output = writer.getvalue()
     assert "WARNING: not level" in output
 
@@ -301,7 +301,7 @@ class TestPrintSummary:
     """Output contains standard deviation."""
     writer = make_writer()
     state = self.make_state({SW: 180.0, NW: 179.0, NE: 180.0, SE: 179.0})
-    print_summary(state, 180.0, writer)
+    print_summary(state, 180.0, 6.0, writer)
     output = writer.getvalue()
     assert "Level (std dev):" in output
 
