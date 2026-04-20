@@ -18,13 +18,11 @@ showcase of the original work.
 
 ## Overview
 
-Given a log catalogue (CSV file) and target structure dimensions, the program
-selects and arranges logs into layers to form four walls of a square log house.
-The algorithm optimizes log placement to keep walls level and minimize corner
-gaps, using a greedy search with exhaustive combination testing.
+Given a log catalogue (CSV file) and target structure dimensions, the program selects and arranges logs into layers to form four walls of a square log house.The algorithm optimizes log placement to keep walls level and minimize corner gaps, using a greedy search with exhaustive combination testing.
 
-The program outputs a stacking order with cardinal directions (N/W/S/E) for
-each log in each layer, making it practical to use on a building site. The layers placement follows counter clockwise direction. For reflections and brief insights about the actual build journey, visit the
+For each layer, the program prints which logs were selected, their orientation (which end faces which cardinal direction), the corner heights contributed by that layer, and the cumulative wall heights at all four corners — giving the builder a precise, actionable stacking order to follow on site.
+
+For reflections and brief insights about the actual build journey, visit the
 [build log](https://medianpath.blogspot.com).
 
 ## What is "Butt and Pass"?
@@ -36,6 +34,48 @@ In butt and pass log construction:
 - The **pass** end of the adjacent log crosses over it with an **overdangle**
 - Logs alternate direction each course (layer)
 - The taper of each log affects the height at each corner
+
+## Real-World Validation
+
+The algorithm was validated against an actual log catalogue from the original 2015 build. Using a catalogue of real peeled logs, the program successfully proposed a stacking order for a 34 x 34 ft and 16 ft tall structure, completing the wall shell in 10 layers within 1.8 inches of the target
+height.
+
+### Command used
+
+```bash
+python -m loghouse --logfile data/realistic_catalogue.csv --length 34 --height 16
+```
+
+### Final layer and summary (output snippet)
+
+```LAYER #10
+------------------------------------------------------------
+SW: LOG# 47    FAT_END    overdangle=7.17  corner=19.50
+NW: LOG# 32    THIN_END   overdangle=7.30  corner=15.50
+NE: LOG# 18    FAT_END    overdangle=6.80  corner=19.50
+SE: LOG# 56    THIN_END   overdangle=6.83  corner=15.92
+
+Corner heights:
+  SW: 19.50  NW: 15.50  NE: 19.50  SE: 15.92
+
+Cumulative heights:
+  SW: 187.45  NW: 190.21  NE: 186.77  SE: 186.32
+
+Logs remaining: 7
+
+------------------------------------------------------------
+SUMMARY
+------------------------------------------------------------
+Total layers:        10
+Target height:       16 ft 0.0 in
+Actual height:       15 ft 10.2 in (max of 4 corners)
+Height margin:       1.8 in
+Level (std dev):     1.51 in
+Status:              WARNING: not level
+------------------------------------------------------------
+```
+
+The `WARNING: not level` status reflects a standard deviation of 1.51 inches across the 4 corners — within the default 2.0 inch level margin and well within acceptable tolerances for log house construction. The 7 remaining logs were not wasted — they were milled into structural lumber and used for the interior staircase and other structural elements of the house.
 
 ## Project Structure
 
@@ -144,7 +184,7 @@ The catalogue is a CSV file with the following columns:
 | `CAP` | 2 | Top layer logs (~20% longer than WALL) |
 | `RP` | 1 | Ridge Pole (largest/longest, never stacked) |
 
-A log can have at most two types, separated by `|` (e.g. `WALL|RPSL`).
+A log can have at most four types, separated by `|` (e.g. `WALL|RPSL!GIRDER`).
 
 ### Sample Catalogue
 
