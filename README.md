@@ -37,7 +37,7 @@ In butt and pass log construction:
 
 ## Real-World Validation
 
-The algorithm was validated against an actual log catalogue from the original 2015 build. Using a catalogue of real peeled logs, the program successfully proposed a stacking order for a 34 x 34 ft and 16 ft tall structure, completing the wall shell in 10 layers within 1.8 inches of the target
+The algorithm was validated against an actual log catalogue from the original build. Using a catalogue of real peeled logs, the program successfully proposed a stacking order for a 34 x 34 ft and 16 ft tall structure, completing the wall shell in 10 layers within 1.8 inches of the target
 height.
 
 ### Command used
