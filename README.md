@@ -7,7 +7,7 @@ for building a log house shell using the [butt and pass](https://www.theoutdoorh
 
 ## Background
 
-This program was originally written in 2015 and used as a guideline for log selection in an actual
+This program was originally written in 2015 during the planning phase and used as a guideline for log selection in an actual
 log house build conducted from raw peeled logs, graded for structural construction. The algorithm was used on-site to determine the stacking order for the walls.
 
 The project was recently modernized and published on GitHub as a
