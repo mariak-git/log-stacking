@@ -285,4 +285,4 @@ with 2-space indentation and 80 character line limit.
 
 ## License
 
-Copyright 2015-2026 Maria Mercury <mariak>. All Rights Reserved.
+Copyright 2015-2026 Maria Katsova <mariak>. All Rights Reserved.
